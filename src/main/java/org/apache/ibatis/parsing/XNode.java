@@ -28,6 +28,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
+ * org.w3c.dom.Node类的一个封装
+ * 在Node类的基础上添加了一些新功能
+ *
+ * getXXXBody: 通过getXXXBody函数获取body属性并将其转换为对应的数据类型
+ * getXXXAttribute: 获取属性值
+ *
+ * 对应单测类
+ * {@link org.apache.ibatis.parsing.XNodeTest}
+ *
  * @author Clinton Begin
  */
 public class XNode {
@@ -44,7 +53,9 @@ public class XNode {
     this.node = node;
     this.name = node.getNodeName();
     this.variables = variables;
+    // 获取当前节点的所有属性
     this.attributes = parseAttributes(node);
+    // 获取当前节点的文本节点内容，当然获取到的数据是已经经过TokenHandler处理过的
     this.body = parseBody(node);
   }
 
@@ -134,6 +145,7 @@ public class XNode {
   }
 
   public Boolean getBooleanBody() {
+    // 设置默认值为null
     return getBooleanBody(null);
   }
 
@@ -214,6 +226,7 @@ public class XNode {
   }
 
   public Boolean getBooleanAttribute(String name, Boolean def) {
+    // 从attributes获取key，如果存在则进行类型转换，否则就返回默认值
     String value = attributes.getProperty(name);
     return value == null ? def : Boolean.valueOf(value);
   }
@@ -254,12 +267,18 @@ public class XNode {
     return value == null ? def : Float.valueOf(value);
   }
 
+  /**
+   * 该函数并不是获取node所有的节点，它只是获取node的子元素节点
+   * @return
+   */
   public List<XNode> getChildren() {
     List<XNode> children = new ArrayList<>();
+    // 获取所有子节点
     NodeList nodeList = node.getChildNodes();
     if (nodeList != null) {
       for (int i = 0, n = nodeList.getLength(); i < n; i++) {
         Node node = nodeList.item(i);
+        // 如果子节点类型是元素节点,就添加到list中
         if (node.getNodeType() == Node.ELEMENT_NODE) {
           children.add(new XNode(xpathParser, node, variables));
         }
@@ -273,6 +292,7 @@ public class XNode {
     for (XNode child : getChildren()) {
       String name = child.getStringAttribute("name");
       String value = child.getStringAttribute("value");
+      // 只有当节点同时具有name和value属性才会添加到properties中
       if (name != null && value != null) {
         properties.setProperty(name, value);
       }
@@ -333,6 +353,7 @@ public class XNode {
     if (attributeNodes != null) {
       for (int i = 0; i < attributeNodes.getLength(); i++) {
         Node attribute = attributeNodes.item(i);
+        // 调用PropertyParser.parse处理
         String value = PropertyParser.parse(attribute.getNodeValue(), variables);
         attributes.put(attribute.getNodeName(), value);
       }
@@ -342,11 +363,13 @@ public class XNode {
 
   private String parseBody(Node node) {
     String data = getBodyData(node);
+    // 取不到body，循环取孩子的body，只要取到第一个，立即返回
     if (data == null) {
       NodeList children = node.getChildNodes();
       for (int i = 0; i < children.getLength(); i++) {
         Node child = children.item(i);
         data = getBodyData(child);
+        // 只要一个节点为文本节点或者CDATA节点,就结束循环。因而此时的body值只是node的第一个文本节点的内容
         if (data != null) {
           break;
         }
@@ -356,6 +379,7 @@ public class XNode {
   }
 
   private String getBodyData(Node child) {
+    // 如果这个节点是文本节点或者CDATA节点，就取节点的内容，然后用PropertyParser.parse()处理下
     if (child.getNodeType() == Node.CDATA_SECTION_NODE
         || child.getNodeType() == Node.TEXT_NODE) {
       String data = ((CharacterData) child).getData();

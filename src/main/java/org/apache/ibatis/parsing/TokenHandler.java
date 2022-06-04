@@ -18,7 +18,16 @@ package org.apache.ibatis.parsing;
 /**
  * @author Clinton Begin
  */
+
+/**
+ * Token(记号)处理器
+ */
 public interface TokenHandler {
+  /**
+   * 处理各种token
+   * @param content 这里的content就是去掉`openToken(‘${’)`,`closeToken(‘}’)`后的值 ${name} => name
+   * @return
+   */
   String handleToken(String content);
 }
 

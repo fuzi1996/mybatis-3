@@ -41,6 +41,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
+ * XPath介绍:
+ * @see <a href="https://www.w3school.com.cn/xpath/index.asp">https://www.w3school.com.cn/xpath/index.asp</a>
+ *
+ * 这个类除了初始化,就是各种`evalXXX`方法
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -137,6 +141,7 @@ public class XPathParser {
   }
 
   public String evalString(String expression) {
+    // 设置类中的document属性作为root
     return evalString(document, expression);
   }
 
@@ -219,25 +224,55 @@ public class XPathParser {
     return new XNode(this, node, variables);
   }
 
+  /**
+   * 真正开始了对xpath表达式的解析
+   *
+   * @param expression
+   * @param root
+   * @param returnType
+   * @return
+   */
   private Object evaluate(String expression, Object root, QName returnType) {
     try {
+      // 调用xpath类进行相应的解析
+      // 注意returnType参数，虽然evaluate返回的数据类型是Object的，
+      // 但是如果指定了错误的returnType，那么在进行类型转换时将会报类型转换异常
       return xpath.evaluate(expression, root, returnType);
     } catch (Exception e) {
       throw new BuilderException("Error evaluating XPath.  Cause: " + e, e);
     }
   }
 
+  /**
+   * Java 8下的介绍
+   * @see <a href="https://docs.oracle.com/javase/8/docs/api/javax/xml/parsers/DocumentBuilderFactory.html">https://docs.oracle.com/javase/8/docs/api/javax/xml/parsers/DocumentBuilderFactory.html</a>
+   *
+   * @param inputSource
+   * @return
+   */
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
+    // mybatis源代码基本上没有什么注释，但是上面这行注释是源代码中自带的。
+    // 那为什么必须在调用commonConstructor函数后才能调用这个函数呢？因为这个函数里面用到了两个属性：validation和entityResolver
+    // 如果在这两个属性没有设置前就调用这个函数，就可能会导致这个类内部属性冲突
     try {
+      // 创建document时用到了两个类：DocumentBuilderFactory和DocumentBuilder。
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      // Set a feature for this DocumentBuilderFactory and DocumentBuilders created by this factory.
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+      // Specifies that the parser produced by this code will validate documents as they are parsed.
       factory.setValidating(validation);
-
+      // Specifies that the parser produced by this code will provide support for XML namespaces.
       factory.setNamespaceAware(false);
+      // Specifies that the parser produced by this code will ignore comments.
       factory.setIgnoringComments(true);
+      // Specifies that the parsers created by this factory must eliminate(排除) whitespace
+      // in element content (sometimes known loosely(松散地) as 'ignorable whitespace')
+      // when parsing XML documents (see XML Rec 2.10).
       factory.setIgnoringElementContentWhitespace(false);
+      // Specifies that the parser produced by this code will convert CDATA nodes to Text nodes and append it to the adjacent(邻近的) (if any) text node.
       factory.setCoalescing(false);
+      // Specifies that the parser produced by this code will expand entity reference nodes.
       factory.setExpandEntityReferences(true);
 
       DocumentBuilder builder = factory.newDocumentBuilder();
@@ -264,10 +299,18 @@ public class XPathParser {
     }
   }
 
+  /**
+   * 通用初始化器
+   * @param validation
+   * @param variables
+   * @param entityResolver
+   */
   private void commonConstructor(boolean validation, Properties variables, EntityResolver entityResolver) {
+    // 基本属性初始化
     this.validation = validation;
     this.entityResolver = entityResolver;
     this.variables = variables;
+    //利用XPathFactory创建一个新的xpath对象
     XPathFactory factory = XPathFactory.newInstance();
     this.xpath = factory.newXPath();
   }

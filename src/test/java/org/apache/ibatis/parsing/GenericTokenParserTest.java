@@ -27,6 +27,10 @@ import org.junit.jupiter.api.Test;
 
 class GenericTokenParserTest {
 
+  /**
+   * 为了测试故意弄得一个TokenHandler
+   * 主要作用就是从map里取值
+   */
   public static class VariableTokenHandler implements TokenHandler {
     private Map<String, String> variables = new HashMap<>();
 
@@ -38,6 +42,29 @@ class GenericTokenParserTest {
     public String handleToken(String content) {
       return variables.get(content);
     }
+  }
+
+  @Test
+  void testDoubleBracket(){
+    GenericTokenParser parser = new GenericTokenParser("${", "}", new VariableTokenHandler(new HashMap<String, String>() {
+      {
+        put("first_name", "James");
+        put("{}first_name", "James");
+        put("initial", "T");
+        put("last_name", "Kirk");
+        put("var{with}brace", "Hiya");
+        put("", "");
+      }
+    }));
+    // ${first_name}
+    // String parse = parser.parse("\\${first_name}");
+
+    // {}first_name => James
+    String parse = parser.parse("${{\\}first_name}");
+
+    // var{with}brace => Hiya
+    // String parse = parser.parse("${var{with\\}brace}");
+    System.out.println(parse);
   }
 
   @Test

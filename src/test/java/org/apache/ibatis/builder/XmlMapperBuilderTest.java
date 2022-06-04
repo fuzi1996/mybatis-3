@@ -35,6 +35,17 @@ import org.junit.jupiter.api.Test;
 class XmlMapperBuilderTest {
 
   @Test
+  void selfTest() throws Exception {
+    Configuration configuration = new Configuration();
+    String resource = "org/apache/ibatis/builder/SelfTestMapper.xml";
+    try (InputStream inputStream = Resources.getResourceAsStream(resource)) {
+      XMLMapperBuilder builder = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
+      builder.parse();
+      MappedStatement mappedStatement = configuration.getMappedStatement("org.apache.ibatis.domain.blog.mappers.SelfTestMapper.orderConditions");
+    }
+  }
+
+  @Test
   void shouldSuccessfullyLoadXMLMapperFile() throws Exception {
     Configuration configuration = new Configuration();
     String resource = "org/apache/ibatis/builder/AuthorMapper.xml";

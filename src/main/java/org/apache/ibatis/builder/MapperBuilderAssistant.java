@@ -50,10 +50,13 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * 映射构建器助手，建造者模式,继承BaseBuilder
+ *
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  // 每个助手都有1个namespace,resource,cache
   private String currentNamespace;
   private final String resource;
   private Cache currentCache;
@@ -82,6 +85,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     this.currentNamespace = currentNamespace;
   }
 
+  // 为id加上namespace前缀，如selectPerson-->org.a.b.selectPerson
   public String applyCurrentNamespace(String base, boolean isReference) {
     if (base == null) {
       return null;
@@ -128,6 +132,8 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+    // valueOrDefault 判断是否为null就用默认值
+    // 调用CacheBuilder构建cache,id=currentNamespace
     Cache cache = new CacheBuilder(currentNamespace)
         .implementation(valueOrDefault(typeClass, PerpetualCache.class))
         .addDecorator(valueOrDefault(evictionClass, LruCache.class))
@@ -137,7 +143,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .blocking(blocking)
         .properties(props)
         .build();
+    // 加入缓存
     configuration.addCache(cache);
+    // 设置当前缓存
     currentCache = cache;
     return cache;
   }
@@ -173,6 +181,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  // 增加ResultMap
   public ResultMap addResultMap(
       String id,
       Class<?> type,
@@ -241,6 +250,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
   }
 
+  // 增加映射语句
   public MappedStatement addMappedStatement(
       String id,
       SqlSource sqlSource,
@@ -267,9 +277,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    // 为id加上namespace前缀
     id = applyCurrentNamespace(id, false);
+    // 是否是select语句
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
+    // 构建statementBuilder
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
         .resource(resource)
         .fetchSize(fetchSize)
@@ -288,12 +301,14 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .useCache(valueOrDefault(useCache, isSelect))
         .cache(currentCache);
 
+    // 参数映射
     ParameterMap statementParameterMap = getStatementParameterMap(parameterMap, parameterType, id);
     if (statementParameterMap != null) {
       statementBuilder.parameterMap(statementParameterMap);
     }
 
     MappedStatement statement = statementBuilder.build();
+    // 建造好调用configuration.addMappedStatement
     configuration.addMappedStatement(statement);
     return statement;
   }

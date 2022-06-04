@@ -24,12 +24,11 @@
 
     <select id="getUser" resultType="org.apache.ibatis.submitted.foreach.User">
         select * from users
-         WHERE id in (
+         WHERE id in
         <foreach item="item" index="index" collection="friendList"
-          separator="," >
-          #{item.id}
+          separator="," open="(" close=")">
+          ${item.id}
         </foreach>
-        )
     </select>
 
   <select id="countByUserList" resultType="_int" parameterType="list">

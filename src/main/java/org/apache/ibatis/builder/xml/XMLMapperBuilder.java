@@ -91,14 +91,22 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    // 如果资源没有加载过就去加载
     if (!configuration.isResourceLoaded(resource)) {
+      // 解析mapper标签
       configurationElement(parser.evalNode("/mapper"));
+      // 记录此资源已经加载
       configuration.addLoadedResource(resource);
+      // 实例化mapper xml对应的接口并添加至全局的configuration中
       bindMapperForNamespace();
     }
-
+    // 在解析过程中如果涉及到引用,可能会解析失败比如引用的资源未加载
+    // 这里就继续解析
+    // 解析之前不完整的resultMap
     parsePendingResultMaps();
+    // 解析之前不完整的cache
     parsePendingCacheRefs();
+    // 解析之前不完整的statement
     parsePendingStatements();
   }
 
@@ -108,16 +116,24 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void configurationElement(XNode context) {
     try {
+      // 获取mapper上的namespace
       String namespace = context.getStringAttribute("namespace");
       if (namespace == null || namespace.isEmpty()) {
         throw new BuilderException("Mapper's namespace cannot be empty");
       }
+      // 跟助手设置namespace
       builderAssistant.setCurrentNamespace(namespace);
+      // 解析cache-ref标签
       cacheRefElement(context.evalNode("cache-ref"));
+      // 解析cache标签
       cacheElement(context.evalNode("cache"));
+      // 解析mapper下的parameterMap标签
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
+      // 解析mapper下的resultMap标签
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      // 设置sql片段
       sqlElement(context.evalNodes("/mapper/sql"));
+      // 构建statement
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
       throw new BuilderException("Error parsing Mapper XML. The XML location is '" + resource + "'. Cause: " + e, e);
@@ -133,6 +149,7 @@ public class XMLMapperBuilder extends BaseBuilder {
 
   private void buildStatementFromContext(List<XNode> list, String requiredDatabaseId) {
     for (XNode context : list) {
+      // statement标签都使用XMLStatementBuilder来解析
       final XMLStatementBuilder statementParser = new XMLStatementBuilder(configuration, builderAssistant, context, requiredDatabaseId);
       try {
         statementParser.parseStatementNode();

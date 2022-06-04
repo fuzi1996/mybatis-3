@@ -41,6 +41,7 @@ public class XMLLanguageDriver implements LanguageDriver {
   @Override
   public SqlSource createSqlSource(Configuration configuration, XNode script, Class<?> parameterType) {
     XMLScriptBuilder builder = new XMLScriptBuilder(configuration, script, parameterType);
+    // 解析 crud标签的子节点  (动态SQL语句解析,各种<if><foreach>标签等)
     return builder.parseScriptNode();
   }
 

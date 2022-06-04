@@ -159,7 +159,7 @@ public class Configuration {
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
-
+  // 所有已经加载的资源都会有一个缓存,避免重复加载
   protected final Set<String> loadedResources = new HashSet<>();
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
 
@@ -340,6 +340,7 @@ public class Configuration {
   public void addLoadedResource(String resource) {
     loadedResources.add(resource);
   }
+
 
   public boolean isResourceLoaded(String resource) {
     return loadedResources.contains(resource);
